@@ -117,7 +117,7 @@ fi
 
 # Test 11: Check backend connection
 echo -n "11. Checking backend server... "
-if curl -s http://localhost:3001/health > /dev/null 2>&1; then
+if curl -s http://localhost:3003/health > /dev/null 2>&1; then
   echo -e "${GREEN}✓ Running${NC}"
   ((PASSED++))
 else

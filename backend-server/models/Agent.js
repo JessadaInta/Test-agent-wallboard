@@ -1,19 +1,17 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// ✅ Import the path getter function
-const { getSQLitePath } = require('../config/database');
+const DB_PATH = process.env.SQLITE_DB_PATH || '../database/sqlite/wallboard.db';
+const dbPath = path.resolve(__dirname, DB_PATH);
 
 class Agent {
-  static getDbPath() {
-    // Use the centralized path resolution
-    return getSQLitePath();
-  }
-
+  /**
+   * Find agent by code with improved error handling
+   * @param {string} agentCode - Agent code (e.g., 'AG001', 'SP001')
+   * @returns {Promise<Object|null>} Agent object or null
+   */
   static findByCode(agentCode) {
     return new Promise((resolve, reject) => {
-      const dbPath = Agent.getDbPath();
-      
       const db = new sqlite3.Database(dbPath, (err) => {
         if (err) {
           console.error(`❌ Error opening database for agent ${agentCode}:`, err);
@@ -59,7 +57,6 @@ class Agent {
    */
   static findByTeam(teamId) {
     return new Promise((resolve, reject) => {
-      const dbPath = Agent.getDbPath();
       const db = new sqlite3.Database(dbPath, (err) => {
         if (err) {
           console.error(`❌ Error opening database for team ${teamId}:`, err);
@@ -99,7 +96,6 @@ class Agent {
    */
   static findAll() {
     return new Promise((resolve, reject) => {
-      const dbPath = Agent.getDbPath();      
       const db = new sqlite3.Database(dbPath, (err) => {
         if (err) {
           console.error('❌ Error opening database:', err);

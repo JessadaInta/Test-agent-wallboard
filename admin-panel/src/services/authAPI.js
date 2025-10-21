@@ -1,69 +1,80 @@
-// services/authAPI.js
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3003/api';
 
-/**
- * Authentication API Service
- * ให้ครบ 100%
- */
+let authToken = null;
+let currentUser = null;
+
 export const authAPI = {
-  /**
-   * Login without password
-   * @param {string} username - User username
-   * @returns {Promise<Object>} Login result with token
-   */
+  // Login
   login: async (username) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminCode: username })
       });
 
       const data = await response.json();
-
+      
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.error || 'Login failed');
       }
 
-      // Store token in localStorage
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.success && data.data?.token) {
+        authToken = data.data.token;
+        currentUser = data.data.user;
+        localStorage.setItem('token', data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data.user));
       }
-
-      return data;
+      
+      return data.data; // Return { user, token }
+      
     } catch (error) {
-      // 🆕 Better error handling
-      if (error.message === 'Failed to fetch') {
-        throw new Error('Network error. Please check your internet connection.');
-      }
-      console.error('Login error:', error);
+      console.error('Login API Error:', error);
       throw error;
     }
   },
 
-  /**
-   * Logout
-   */
+  // Logout
   logout: () => {
+    authToken = null;
+    currentUser = null;
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   },
 
-  /**
-   * Get current user from localStorage
-   */
-  getCurrentUser: () => {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+  // Get token
+  getToken: () => {
+    if (!authToken) {
+      authToken = localStorage.getItem('token');
+    }
+    return authToken;
   },
 
-  /**
-   * Check if user is logged in
-   */
+  // Get current user
+  getCurrentUser: () => {
+    if (!currentUser) {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          currentUser = JSON.parse(userStr);
+        } catch (e) {
+          console.error('Error parsing user:', e);
+        }
+      }
+    }
+    return currentUser;
+  },
+
+  // Check if logged in
   isLoggedIn: () => {
-    return localStorage.getItem('token') !== null;
+    const token = authAPI.getToken();
+    const user = authAPI.getCurrentUser();
+    return !!(token && user);
+  },
+
+  // Check if user is admin
+  isAdmin: () => {
+    const user = authAPI.getCurrentUser();
+    return user?.role?.toUpperCase() === 'ADMIN';
   }
 };

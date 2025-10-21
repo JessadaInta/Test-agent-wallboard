@@ -119,7 +119,7 @@ function LoginForm({ onLogin }) {
         <div className="login-footer">
           <p>Sample codes: AG001, AG002, AG003</p>
           <p className="help-text">
-            Need help? Check if backend server is running on port 3001
+            Need help? Check if backend server is running on port 3003
           </p>
         </div>
       </div>

@@ -4,84 +4,25 @@ const path = require('path');
 const fs = require('fs');
 
 // SQLite Configuration
-const SQLITE_DB_PATH = process.env.SQLITE_DB_PATH || './database/sqlite/wallboard.db';
+const SQLITE_DB_PATH = process.env.SQLITE_DB_PATH;
+let db;
 
 function initSQLite() {
   return new Promise((resolve, reject) => {
-    // Calculate absolute path from project root (not from config folder)
-    // Assuming server.js is in project root
-    const projectRoot = path.resolve(__dirname, '../../');
-    const dbPath = path.resolve(projectRoot, SQLITE_DB_PATH);
-    
-    console.log('🔍 SQLite Connection Details:');
-    console.log(`   SQLITE_DB_PATH (env): ${SQLITE_DB_PATH}`);
-    console.log(`   __dirname: ${__dirname}`);
-    console.log(`   Project root: ${projectRoot}`);
-    console.log(`   Resolved dbPath: ${dbPath}`);
-    
-    // Check if directory exists
-    const dbDir = path.dirname(dbPath);
-
-    console.log(`   Resolved dbDir: ${dbDir}`);
-
-    if (!fs.existsSync(dbDir)) {
-      console.log(`⚠️  Database directory does not exist: ${dbDir}`);
-      console.log(`   Creating directory...`);
-      try {
-        fs.mkdirSync(dbDir, { recursive: true });
-        console.log(`✅ Directory created successfully`);
-      } catch (error) {
-        console.error(`❌ Failed to create directory:`, error);
-        reject(new Error(`Failed to create database directory: ${error.message}`));
-        return;
-      }
-    }
-    
-    // Check if database file exists
-    if (!fs.existsSync(dbPath)) {
-      console.log(`⚠️  Database file does not exist: ${dbPath}`);
-      console.log(`   Please run database setup script first:`);
-      console.log(`   cd database/sqlite && ./setup.sh`);
-      reject(new Error(`Database file not found: ${dbPath}`));
-      return;
-    }
-    
-    // Check file permissions
-    try {
-      fs.accessSync(dbPath, fs.constants.R_OK | fs.constants.W_OK);
-      console.log(`✅ Database file has correct permissions`);
-    } catch (error) {
-      console.error(`❌ Database file permission error:`, error);
-      reject(new Error(`Cannot access database file: ${error.message}`));
-      return;
-    }
-    
-    // Try to open database
-    const db = new sqlite3.Database(dbPath, (err) => {
+    const dbPath = path.resolve(SQLITE_DB_PATH);
+    db = new sqlite3.Database(dbPath, (err) => {
       if (err) {
         console.error('❌ SQLite connection error:', err);
         reject(err);
       } else {
         console.log('✅ Connected to SQLite database');
         console.log(`📁 Database location: ${dbPath}`);
-        
-        // Test query
-        db.get("SELECT COUNT(*) as count FROM agents", (err, row) => {
-          if (err) {
-            console.error('❌ Database query error:', err);
-            console.log('⚠️  Database file exists but schema might be missing');
-            db.close();
-            reject(new Error('Database schema error - please run setup script'));
-          } else {
-            console.log(`📊 Found ${row.count} agents in database`);
-            db.close();
-            resolve();
-          }
-        });
+        resolve(db); // keep db alive
       }
     });
   });
 }
+
 
 // MongoDB Configuration with Retry Logic
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/wallboard';
@@ -110,7 +51,7 @@ async function connectMongoDB() {
         throw new Error(`MongoDB connection failed after ${maxRetries} attempts: ${error.message}`);
       }
       
-      const waitTime = Math.min(1000 * Math.pow(2, currentRetry), 10000);
+      const waitTime = Math.min(1000 * Math.pow(2, currentRetry), 10000); // Exponential backoff, max 10s
       console.log(`⏳ Waiting ${waitTime/1000}s before retry...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
@@ -141,9 +82,5 @@ process.on('SIGINT', async () => {
 module.exports = {
   initSQLite,
   connectMongoDB,
-  // Export resolved path for use in models
-  getSQLitePath: () => {
-    const projectRoot = path.resolve(__dirname, '../../');
-    return path.resolve(projectRoot, SQLITE_DB_PATH);
-  }
+  SQLITE_DB_PATH: path.resolve(__dirname, SQLITE_DB_PATH)
 };

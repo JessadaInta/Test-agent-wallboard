@@ -1,19 +1,11 @@
 // controllers/userController.js
 const userService = require('../services/userService');
 
-/**
- * User Controller
- * จัดการ HTTP requests สำหรับ user management
- */
 const userController = {
-  /**
-   * GET /api/users
-   */
   getAllUsers: async (req, res) => {
     try {
       const { role, status, teamId } = req.query;
       const users = await userService.getAllUsers({ role, status, teamId });
-
       res.status(200).json({
         success: true,
         data: users,
@@ -29,14 +21,10 @@ const userController = {
     }
   },
 
-  /**
-   * GET /api/users/:id
-   */
   getUserById: async (req, res) => {
     try {
       const { id } = req.params;
       const user = await userService.getUserById(id);
-
       res.status(200).json({
         success: true,
         data: user
@@ -51,14 +39,10 @@ const userController = {
     }
   },
 
-  /**
-   * POST /api/users
-   */
   createUser: async (req, res) => {
     try {
       const userData = req.body;
       const newUser = await userService.createUser(userData);
-
       res.status(201).json({
         success: true,
         message: 'User created successfully',
@@ -67,14 +51,9 @@ const userController = {
     } catch (error) {
       console.error('Error in createUser:', error);
       let statusCode = 500;
-      if (error.message.includes('already exists')) {
-        statusCode = 409;
-      } else if (error.message.includes('Invalid') || error.message.includes('required')) {
-        statusCode = 400;
-      } else if (error.message.includes('does not exist')) {
-        statusCode = 404;
-      }
-      
+      if (error.message.includes('already exists')) statusCode = 409;
+      else if (error.message.includes('Invalid') || error.message.includes('required')) statusCode = 400;
+      else if (error.message.includes('does not exist')) statusCode = 404;
       res.status(statusCode).json({
         success: false,
         message: error.message
@@ -82,9 +61,6 @@ const userController = {
     }
   },
 
-  /**
-   * PUT /api/users/:id
-   */
   updateUser: async (req, res) => {
     try {
       const { id } = req.params;
@@ -99,13 +75,9 @@ const userController = {
       });
     } catch (error) {
       console.error('Error in updateUser:', error);
-
       let statusCode = 500;
-      if (error.message === 'User not found') {
-        statusCode = 404;
-      } else if (error.message.includes('cannot be changed') || error.message.includes('Invalid') || error.message.includes('required')) {
-        statusCode = 400;
-      }
+      if (error.message === 'User not found') statusCode = 404;
+      else if (error.message.includes('cannot be changed') || error.message.includes('Invalid')) statusCode = 400;
 
       res.status(statusCode).json({
         success: false,
@@ -114,24 +86,17 @@ const userController = {
     }
   },
 
-  /**
-   * DELETE /api/users/:id
-   */
   deleteUser: async (req, res) => {
     try {
       const { id } = req.params;
-
-      const result = await userService.deleteUser(id);
-
+      await userService.deleteUser(id);
       res.status(200).json({
         success: true,
-        message: result.message
+        message: 'User deleted successfully'
       });
     } catch (error) {
       console.error('Error in deleteUser:', error);
-
       const statusCode = error.message === 'User not found' ? 404 : 500;
-
       res.status(statusCode).json({
         success: false,
         message: error.message

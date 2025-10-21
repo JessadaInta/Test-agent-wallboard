@@ -12,7 +12,7 @@ const { initSQLite, connectMongoDB } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const agentRoutes = require('./routes/agents');
 const messageRoutes = require('./routes/messages');
-const userRoutes = require('./routes/users');
+const userRoutes = require('./routes/users'); 
 
 // Import socket handler
 const socketHandler = require('./socket/socketHandler');
@@ -71,7 +71,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/messages', messageRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/users', userRoutes); 
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -109,15 +109,15 @@ async function startServer() {
   try {
     console.log('🚀 Starting Agent Wallboard Backend Server...');
     console.log('');
-
+    
     // Initialize databases
     console.log('📊 Initializing databases...');
     await initSQLite();
     await connectMongoDB();
     console.log('');
-
+    
     // Start server
-    const PORT = process.env.PORT || 3001;
+    const PORT = process.env.PORT || 3003;
     server.listen(PORT, () => {
       console.log('✅ Server started successfully!');
       console.log('');
@@ -152,7 +152,7 @@ async function startServer() {
       console.log('');
       console.log('Press Ctrl+C to stop');
     });
-
+    
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
